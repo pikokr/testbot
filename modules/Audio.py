@@ -16,6 +16,14 @@ from client import Client
 URL_REG = re.compile(r'https?://(?:www\.)?.+')
 
 
+def formatDuration(milliseconds):
+    seconds = int(milliseconds/1000)
+    minute, second = divmod(seconds, 60)
+    hour, minute = divmod(minute, 60)
+
+    return (f"{hour:02}:" if hour else "") + f"{minute:02}:{second:02}"
+
+
 class NoChannelProvided(commands.CommandError):
     """Error raised when no suitable voice channel was supplied."""
     pass
@@ -44,8 +52,6 @@ class Player(wavelink.Player):
         super().__init__(*args, **kwargs)
 
         self.context: commands.Context = kwargs.get('context', None)
-        if self.context:
-            self.dj: discord.Member = self.context.author
 
         self.queue = asyncio.Queue()
         self.controller = None
@@ -112,13 +118,13 @@ class Player(wavelink.Player):
 
         embed = discord.Embed(title=f'Music Controller | {channel.name}', colour=0xebb145)
         embed.description = f'Now Playing:\n**`{track.title}`**\n\n'
-        embed.set_thumbnail(url=track.thumb)
+        if track.thumb:
+            embed.set_thumbnail(url=track.thumb)
 
-        embed.add_field(name='Duration', value=str(datetime.timedelta(milliseconds=int(track.length))))
+        embed.add_field(name='Duration', value='LIVE' if track.is_stream else str(datetime.timedelta(milliseconds=int(track.length))))
         embed.add_field(name='Queue Length', value=str(qsize))
         embed.add_field(name='Volume', value=f'**`{self.volume}%`**')
         embed.add_field(name='Requested By', value=track.requester.mention)
-        embed.add_field(name='DJ', value=self.dj.mention)
         embed.add_field(name='Video URL', value=f'[Click Here!]({track.uri})')
 
         return embed
@@ -160,32 +166,31 @@ class InteractiveController(ui.View):
         self.bot = bot
 
     @ui.button(emoji='\u25B6')
-    async def resume_command(self):
+    async def resume_command(self, button: discord.ui.Button, interaction: discord.Interaction):
         await self.player.set_pause(False)
         await self.player.invoke_controller()
 
     @ui.button(emoji='\u23F8')
-    async def pause_command(self):
+    async def pause_command(self, button: discord.ui.Button, interaction: discord.Interaction):
         await self.player.set_pause(True)
         await self.player.invoke_controller()
 
     @ui.button(emoji='\u23F9')
-    async def stop_command(self):
+    async def stop_command(self, button: discord.ui.Button, interaction: discord.Interaction):
         await self.player.teardown()
-        await self.player.invoke_controller()
 
     @ui.button(emoji='\u23ED')
-    async def skip_command(self):
+    async def skip_command(self, button: discord.ui.Button, interaction: discord.Interaction):
         await self.player.stop()
         await self.player.invoke_controller()
 
     @ui.button(emoji='\U0001F500')
-    async def shuffle_command(self):
+    async def shuffle_command(self, button: discord.ui.Button, interaction: discord.Interaction):
         random.shuffle(self.player.queue._queue)
         await self.player.invoke_controller()
 
     @ui.button(emoji='\u2795')
-    async def volup_command(self):
+    async def volup_command(self, button: discord.ui.Button, interaction: discord.Interaction):
         vol = int(math.ceil((self.player.volume + 10) / 10)) * 10
 
         if vol > 100:
@@ -195,7 +200,7 @@ class InteractiveController(ui.View):
         await self.player.invoke_controller()
 
     @ui.button(emoji='\u2796')
-    async def voldown_command(self):
+    async def voldown_command(self, button: discord.ui.Button, interaction: discord.Interaction):
         vol = int(math.ceil((self.player.volume - 10) / 10)) * 10
 
         if vol < 0:
@@ -205,7 +210,7 @@ class InteractiveController(ui.View):
         await self.player.invoke_controller()
 
     @ui.button(emoji='\U0001F1F6')
-    async def queue_command(self):
+    async def queue_command(self, button: discord.ui.Button, interaction: discord.Interaction):
         if self.player.queue.qsize() == 0:
             return
 
@@ -214,6 +219,11 @@ class InteractiveController(ui.View):
         paginator = menus.MenuPages(source=pages, timeout=None, delete_message_after=True)
 
         await paginator.start(self.ctx)
+
+    @ui.button(label='클릭해 시간 보기')
+    async def timestamp(self, button: discord.ui.Button, interaction: discord.Interaction):
+        button.label = formatDuration(self.player.position)
+        await interaction.response.edit_message(view=self)
 
 
 class PaginatorSource(menus.ListPageSource):
@@ -287,19 +297,6 @@ class Audio(commands.Cog, wavelink.WavelinkMixin):
             player.node.players.pop(member.guild.id)
             return
 
-        channel = self.bot.get_channel(int(player.channel_id))
-
-        if member == player.dj and after.channel is None:
-            for m in channel.members:
-                if m.bot:
-                    continue
-                else:
-                    player.dj = m
-                    return
-
-        elif after.channel == channel and player.dj not in channel.members:
-            player.dj = member
-
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
         """Cog wide error handler."""
         if isinstance(error, IncorrectChannelError):
@@ -318,12 +315,6 @@ class Audio(commands.Cog, wavelink.WavelinkMixin):
     async def cog_before_invoke(self, ctx: commands.Context):
         player: Player = self.bot.wavelink.get_player(ctx.guild.id, cls=Player, context=ctx)
 
-        if player.context:
-            if player.context.channel != ctx.channel:
-                await ctx.send(
-                    f'{ctx.author.mention}, you must be in {player.context.channel.mention} for this session.')
-                raise IncorrectChannelError
-
         if ctx.command.name == 'connect' and not player.context:
             return
 
@@ -333,11 +324,6 @@ class Audio(commands.Cog, wavelink.WavelinkMixin):
         channel = self.bot.get_channel(int(player.channel_id))
         if not channel:
             return
-
-        if player.is_connected:
-            if ctx.author not in channel.members:
-                await ctx.send(f'{ctx.author.mention}, you must be in `{channel.name}` to use voice commands.')
-                raise IncorrectChannelError
 
     def required(self, ctx: commands.Context):
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
