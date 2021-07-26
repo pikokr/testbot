@@ -420,7 +420,6 @@ class Audio(commands.Cog, wavelink.WavelinkMixin):
 
         if not player.is_connected:
             return
-        player.stop_votes.add(ctx.author)
         await player.teardown()
         await ctx.message.add_reaction('✅')
 
