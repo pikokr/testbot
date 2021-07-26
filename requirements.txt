@@ -1,6 +1,4 @@
+wavelink~=0.9.10
+jishaku~=2.2.0a335+g9fb5bc1.master
 discord.py
 discord.py[voice]
-jishaku~=2.2.0a335+g9fb5bc1.master
-aiopyston
-discodo
-wavelink~=0.9.10
