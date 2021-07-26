@@ -1,4 +1,6 @@
 wavelink~=0.9.10
-jishaku~=2.2.0a335+g9fb5bc1.master
-discord.py
+jishaku
+git+https://github.com/Rapptz/discord.py
 discord.py[voice]
+aiopyston
+git+https://github.com/Rapptz/discord-ext-menus
