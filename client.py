@@ -1,12 +1,27 @@
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
+from jishaku import paginators
 from pyston import PystonClient
+import traceback
+import wavelink
 
 
 class Client(commands.Bot):
     piston = PystonClient()
 
-    async def on_command_error(self, ctx: commands.Context, exception):
+    wavelink: wavelink.Client
+
+    def __init__(self, command_prefix, **options):
+        super().__init__(command_prefix, **options)
+
+    async def on_command_error(self, ctx: commands.Context, exception: Exception):
         if isinstance(exception, CommandNotFound):
             return
-        await ctx.reply(f'```\n{exception}\n```')
+        pg = paginators.WrappedPaginator(prefix='```', suffix='```', max_size=1985)
+
+        pg.add_line(
+            '\n'.join(traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__)))
+
+        pgi = paginators.PaginatorInterface(ctx.bot, pg, owner=ctx.author)
+
+        return await pgi.send_to(ctx)
