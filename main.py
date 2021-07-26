@@ -1,7 +1,7 @@
-from discord.ext import commands
 import config
+from client import Client
 
-bot = commands.Bot(command_prefix=config.PREFIX, owner_ids=config.OWNERS)
+bot = Client(command_prefix=config.PREFIX, owner_ids=config.OWNERS)
 
 bot.load_extension('jishaku')
 
