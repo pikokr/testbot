@@ -13,6 +13,7 @@ class Coding(commands.Cog):
         cb = codeblocks.codeblock_converter(code)
         if cb.language is None:
             return await ctx.reply('코드블럭쓰세요')
+        await ctx.message.add_reaction('▶')
         res = await self.bot.piston.execute(cb.language, cb.content)
         pg = paginators.WrappedPaginator(prefix=f'```{cb.language}', suffix='```', max_size=1985)
 
