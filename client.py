@@ -3,16 +3,18 @@ from discord.ext.commands import CommandNotFound
 from jishaku import paginators
 from pyston import PystonClient
 import traceback
-import wavelink
+import discodo
 
 
 class Client(commands.Bot):
     piston = PystonClient()
 
-    wavelink: wavelink.Client
+    # wavelink: wavelink.Client
 
     def __init__(self, command_prefix, **options):
         super().__init__(command_prefix, **options)
+        self.Audio = discodo.DPYClient(self)
+        self.Audio.registerNode(region='LOCAL')
 
     async def on_command_error(self, ctx: commands.Context, exception: Exception):
         if isinstance(exception, CommandNotFound):
