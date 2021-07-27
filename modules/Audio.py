@@ -8,6 +8,8 @@ from discord.ext import commands
 
 import discodo
 
+from client import Client
+
 NEWLINE = "\n"
 
 
@@ -47,8 +49,8 @@ class SubtitleCallback:
             )
 
 
-class Music(commands.Cog):
-    def __init__(self, Bot):
+class Audio(commands.Cog):
+    def __init__(self, Bot: Client):
         self.Bot = Bot
         self.Audio = Bot.Audio
 
