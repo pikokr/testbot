@@ -361,7 +361,7 @@ class Audio(commands.Cog):
             )
             Chapter = Chapters[0] if Chapters else None
 
-            STATE_EMOJI = {"playing": "▶️", "paused": "⏸️", "stopped": "⏹️"}
+            STATE_EMOJI = {"PLAYING": "▶️", "PAUSED": "⏸️", "STOPPED": "⏹️"}
 
             embed = discord.Embed(
                 title=ctx.voice_client.current.title,
