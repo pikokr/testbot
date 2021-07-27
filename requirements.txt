@@ -2,4 +2,4 @@ git+https://github.com/Gorialis/jishaku
 git+https://github.com/Rapptz/discord.py
 discord.py[voice]
 aiopyston
-discodo==3.0.3
+git+https://github.com/kijk2869/discodo@master
