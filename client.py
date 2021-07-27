@@ -8,6 +8,7 @@ from jishaku import paginators
 from pyston import PystonClient
 import traceback
 import discodo
+import config
 
 
 class Client(commands.Bot):
@@ -18,7 +19,7 @@ class Client(commands.Bot):
     def __init__(self, command_prefix, **options):
         super().__init__(command_prefix, **options)
         self.Audio = discodo.DPYClient(self)
-        self.Audio.registerNode(region='LOCAL')
+        self.Audio.registerNode(host=config.DISCODO_HOST, port=config.discodo['PORT'], password=config.discodo['PASSWORD'])
 
     async def pagination(self, ctx, callback, limit):
         position = 0

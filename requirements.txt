@@ -1,7 +1,5 @@
-wavelink~=0.9.10
-jishaku
+git+https://github.com/Gorialis/jishaku
 git+https://github.com/Rapptz/discord.py
 discord.py[voice]
 aiopyston
-git+https://github.com/Rapptz/discord-ext-menus
-discodo~=3.0.4
+discodo==3.0.3
